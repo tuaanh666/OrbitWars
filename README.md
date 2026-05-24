@@ -10,7 +10,7 @@
 ##  Phân công thành viên
 
 | Thành viên | Vai trò 
-|---|---|---|
+|---|---|
 | ** 1** | RL Agent & Training 
 | ** 2** | Environment & Game Logic 
 | ** 3** | Evaluation, Report & Submit 
