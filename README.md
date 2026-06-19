@@ -255,12 +255,6 @@ python scripts/fetch_posters.py \
 ```
 http://localhost:5000
 ```
-| --------------- | ------------------------------------- |
-| Flask Web       | http://localhost:5000                 |
-| Spark Master UI | http://localhost:8080                 |
-| HDFS NameNode   | http://localhost:9870                 |
-| HBase UI        | http://localhost:16010                |
-| Airflow UI      | http://localhost:8088 (`admin/admin`) |
 
 Để mục ** Thịnh hành real-time** hiển thị dữ liệu, chỉ cần để service `wiki` chạy vài phút rồi tải lại trang.
 
