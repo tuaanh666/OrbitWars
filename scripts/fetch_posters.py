@@ -1,26 +1,3 @@
-"""
-fetch_posters.py — Lấy poster phim THẬT từ TMDB và lưu vào DB (cột movies.poster_url).
-=====================================================================================
-MovieLens cung cấp `links.csv` (movieId -> tmdbId). Script dùng tmdbId gọi TMDB API
-lấy `poster_path`, ghép thành URL ảnh trên CDN TMDB rồi UPDATE vào bảng `movies`.
-
-Web (serving/app.py) đọc cột này và hiển thị poster; phim nào thiếu ảnh sẽ tự rơi về
-placeholder emoji.
-
-Cách dùng (chạy trên HOST, kết nối MySQL trong Docker đang mở cổng 3306):
-
-    set TMDB_API_KEY=xxxxxxxx                  # PowerShell: $env:TMDB_API_KEY="xxxx"
-    python scripts/fetch_posters.py            # mặc định: MySQL localhost:3306
-
-Tham số (qua env hoặc CLI):
-    TMDB_API_KEY   : API key TMDB (bắt buộc)
-    DB_URL         : SQLAlchemy URL (mặc định mysql+pymysql://mluser:mlpassword@localhost:3306/movielens)
-    LINKS_CSV      : đường dẫn links.csv (mặc định data/ml-25m/links.csv)
-    --limit N      : lấy thêm poster cho N phim nhiều lượt đánh giá nhất (mặc định 3000)
-    --workers N    : số luồng tải song song (mặc định 12)
-    --size S       : kích cỡ ảnh TMDB: w185 / w342 / w500 (mặc định w342)
-    --force        : tải lại cả phim đã có poster_url
-"""
 import os
 import csv
 import sys
@@ -37,8 +14,6 @@ DEFAULT_DB = "mysql+pymysql://mluser:mlpassword@localhost:3306/movielens"
 TMDB_API = "https://api.themoviedb.org/3/movie/{tmdb_id}?api_key={key}"
 TMDB_IMG = "https://image.tmdb.org/t/p/{size}{path}"
 
-
-# --------------------------------------------------------------------------- #
 def ensure_poster_column(engine):
     """Thêm cột poster_url vào bảng movies nếu chưa có (MySQL & SQLite đều chạy)."""
     cols = [c["name"] for c in inspect(engine).get_columns("movies")]
@@ -63,7 +38,6 @@ def load_links(path):
 
 
 def target_movies(engine, limit):
-    """Tập phim cần poster: phim được gợi ý + phim phổ biến + top theo lượt đánh giá."""
     need = set()
     with engine.connect() as conn:
         for r in conn.execute(text("SELECT DISTINCT movie_id FROM user_recommendations")):
@@ -83,8 +57,6 @@ def already_have(engine):
             "SELECT movie_id FROM movies WHERE poster_url IS NOT NULL AND poster_url <> ''"))
         return {r[0] for r in rows}
 
-
-# --------------------------------------------------------------------------- #
 def fetch_one(movie_id, tmdb_id, key, size, retries=3):
     """Trả (movie_id, poster_url|None). Raise nếu key sai (401) để dừng sớm."""
     url = TMDB_API.format(tmdb_id=tmdb_id, key=key)
