@@ -17,16 +17,19 @@ BIG DATA/
 
 >  `data/` trên máy bạn  = `/app/data` bên trong container Docker(được nối với nhau bằng *volume mount*, là cùng một thư mục).
 
----
 
 ## Cách 1 — Tải bằng Docker 
 Container `ingestion` đã cấu hình sẵn (`DATA_DIR=/app/data`, mount `./data`),  chỉ cần:
 ```bash
+
 docker compose up -d
 docker compose run --rm ingestion python download_data.py
 → Dữ liệu tự tải và giải nén vào /app/data/ml-25m = data/ml-25m/ trên máy bạn.
 
-Cách 2 — Tải trên máy (không cần Docker)
+
+```
+
+## Cách 2 — Tải trên máy (không cần Docker)
 Phải trỏ biến DATA_DIR về thư mục data/ của dự án (mặc định trong code là /app/data
 dành cho container):
 
@@ -56,7 +59,3 @@ Chạy local: train_als.py đọc thẳng data/ml-25m/ratings.csv.
 
 
 
-
----
-
-Đây là nội dung Markdown hoàn chỉnh
