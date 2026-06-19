@@ -1,16 +1,12 @@
 """
 wiki_stream_producer.py — Nguồn REAL-TIME THẬT cho hệ thống gợi ý phim.
-=======================================================================
 Thay cho việc replay dataset, file này cắm vào **Wikimedia EventStreams**
 (https://stream.wikimedia.org/v2/stream/recentchange) — một luồng SSE CÔNG KHAI,
-chảy LIVE 24/7, miễn phí, không cần API key (tương đương WebSocket Binance của bài mẫu).
+chảy LIVE 24/7, miễn phí, không cần API key .
 
-Mỗi khi có ai đó **chỉnh sửa một trang phim trên Wikipedia ngay lúc này**, ta coi đó là
-một tín hiệu "phim đang được quan tâm" và đẩy sự kiện vào Kafka. Stream layer sẽ tổng hợp
-thành danh sách "🔥 Thịnh hành real-time".
-
-Khớp tên: chuẩn hoá tiêu đề Wikipedia ("The Matrix", "Toy Story 3", "Inception (film)")
-về dạng canonical để so với tiêu đề MovieLens ("Matrix, The (1995)"...).
+Mỗi khi có ai đó **chỉnh sửa một trang phim trên Wikipedia ngay lúc này**,  ta coi là
+một tín hiệu phim đang được quan tâm và đẩy sự kiện vào Kafka. Stream layer sẽ tổng hợp
+thành danh sách " Thịnh hành real-time".
 
 Cách dùng:
     python wiki_stream_producer.py             # chạy thật, đẩy Kafka
@@ -31,19 +27,19 @@ STREAM_URL = os.environ.get(
 KAFKA_BROKER = os.environ.get("KAFKA_BROKER", "kafka:9092")
 TOPIC = os.environ.get("KAFKA_TOPIC_RATINGS", "ratings-stream")
 MOVIES_CSV = os.environ.get("MOVIES_PATH", "/app/data/ml-25m/movies.csv")
-WIKI = os.environ.get("WIKI_FILTER", "enwiki")   # chỉ lấy Wikipedia tiếng Anh
+WIKI = os.environ.get("WIKI_FILTER", "enwiki")   
 
 _ARTICLE_RE = re.compile(r"^(.*),\s+(The|A|An|La|Le|Les|Il|El|Die|Das|Der|Une|Un)$", re.I)
 
 
 def canon(title: str) -> str:
     """Chuẩn hoá tiêu đề về dạng so khớp: bỏ năm, đảo ', The' -> 'The ', bỏ dấu câu."""
-    t = re.sub(r"\s*\(\d{4}\)\s*$", "", title).strip()       # bỏ '(1995)'
+    t = re.sub(r"\s*\(\d{4}\)\s*$", "", title).strip()    
     m = _ARTICLE_RE.match(t)
     if m:
-        t = f"{m.group(2)} {m.group(1)}"                      # 'Matrix, The' -> 'The Matrix'
+        t = f"{m.group(2)} {m.group(1)}"                    
     t = t.lower()
-    t = re.sub(r"[^a-z0-9 ]", " ", t)                        # bỏ dấu câu
+    t = re.sub(r"[^a-z0-9 ]", " ", t)                      
     t = re.sub(r"\s+", " ", t).strip()
     return t
 
