@@ -34,10 +34,10 @@ Phải trỏ biến DATA_DIR về thư mục data/ của dự án (mặc định
 dành cho container):
 
 
-# Windows PowerShell
+ Windows PowerShell
 $env:DATA_DIR="./data"; python ingestion/download_data.py
 
-# Git Bash / Linux / macOS
+ Git Bash / Linux / macOS
 DATA_DIR=./data python ingestion/download_data.py
 Cách 3 — Tải thủ công
 Vào: https://grouplens.org/datasets/movielens/25m/
