@@ -1,13 +1,6 @@
-# ============================================================================
-#  Movie Recommendation System — Lambda Architecture
-#  Toàn bộ hệ thống Big Data đóng gói trong Docker Compose
-# ============================================================================
 name: movielens-recsys
 
 services:
-  # ----------------------------------------------------------------------
-  #  INGESTION LAYER — Kafka + Zookeeper
-  # ----------------------------------------------------------------------
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: zookeeper
@@ -39,15 +32,12 @@ services:
       retries: 10
     networks: [recsys-net]
 
-  # ----------------------------------------------------------------------
-  #  STORAGE / DATA LAKE — HDFS (NameNode + DataNode)
-  # ----------------------------------------------------------------------
   namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
     container_name: namenode
     ports:
-      - "9870:9870"   # Web UI
-      - "9000:9000"   # IPC
+      - "9870:9870" 
+      - "9000:9000"  
     volumes:
       - namenode_data:/hadoop/dfs/name
     environment:
@@ -71,18 +61,18 @@ services:
     env_file: [./config/hadoop.env]
     networks: [recsys-net]
 
-  # ----------------------------------------------------------------------
-  #  BATCH PROCESSING — Apache Spark (Master + Worker)
-  # ----------------------------------------------------------------------
   spark-master:
     image: bde2020/spark-master:3.3.0-hadoop3.3
     container_name: spark-master
     ports:
-      - "8080:8080"   # Spark Master Web UI
-      - "7077:7077"   # Spark Master
+      - "8080:8080"  
+      - "7077:7077"   
     environment:
       - INIT_DAEMON_STEP=setup_spark
     env_file: [./config/hadoop.env]
+    volumes:
+      - ./batch:/app/batch   
+      - ./data:/app/data
     networks: [recsys-net]
 
   spark-worker:
@@ -94,24 +84,20 @@ services:
     environment:
       - "SPARK_MASTER=spark://spark-master:7077"
     env_file: [./config/hadoop.env]
+    volumes:
+      - ./batch:/app/batch
+      - ./data:/app/data
     networks: [recsys-net]
 
-  # ----------------------------------------------------------------------
-  #  REAL-TIME VIEW — HBase (standalone, có Thrift server cho happybase)
-  # ----------------------------------------------------------------------
   hbase:
     image: harisekhon/hbase:2.1
     container_name: hbase
     hostname: hbase
     ports:
-      - "16010:16010" # HBase Master Web UI
-      - "9090:9090"   # Thrift server
+      - "16010:16010" 
+      - "9090:9090"   
       - "2182:2181"
     networks: [recsys-net]
-
-  # ----------------------------------------------------------------------
-  #  BATCH VIEW — MySQL (metadata phim + thống kê + gợi ý batch)
-  # ----------------------------------------------------------------------
   mysql:
     image: mysql:8.0
     container_name: mysql
@@ -131,10 +117,6 @@ services:
       timeout: 10s
       retries: 10
     networks: [recsys-net]
-
-  # ----------------------------------------------------------------------
-  #  ORCHESTRATION — Apache Airflow (standalone: webserver + scheduler)
-  # ----------------------------------------------------------------------
   airflow:
     image: apache/airflow:2.8.1-python3.11
     container_name: airflow
@@ -154,10 +136,6 @@ services:
       - ./airflow/plugins:/opt/airflow/plugins
     command: standalone
     networks: [recsys-net]
-
-  # ----------------------------------------------------------------------
-  #  INGESTION PRODUCER — giả lập luồng rating mới đẩy vào Kafka
-  # ----------------------------------------------------------------------
   ingestion:
     build: ./ingestion
     container_name: ingestion
@@ -169,11 +147,6 @@ services:
       - ./data:/app/data
     networks: [recsys-net]
     restart: on-failure
-
-  # ----------------------------------------------------------------------
-  #  REAL-TIME SOURCE (THẬT) — Wikimedia EventStreams -> Kafka
-  #  Phim đang được chỉnh sửa trên Wikipedia ngay lúc này = tín hiệu trending live
-  # ----------------------------------------------------------------------
   wiki:
     build: ./ingestion
     container_name: wiki
@@ -206,10 +179,7 @@ services:
       - ./data:/app/data
     networks: [recsys-net]
     restart: on-failure
-
-  # ----------------------------------------------------------------------
   #  SERVING LAYER — Flask web demo
-  # ----------------------------------------------------------------------
   serving:
     build: ./serving
     container_name: serving
