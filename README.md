@@ -1,27 +1,30 @@
 # 🎬 Hệ thống gợi ý phim thời gian thực trên nền tảng dữ liệu lớn
+
 ### *Real-time Movie Recommendation System on Big Data Platform*
 
-Hệ thống **gợi ý phim** xây trên nền tảng Big Data theo **Lambda Architecture** (Batch + Speed +
-Serving). Lõi là thuật toán **ALS (Alternating Least Squares)** của Spark MLlib, huấn luyện trên
-**MovieLens 25M** (25 triệu lượt đánh giá). Điểm khác biệt: hệ thống lấy **dữ liệu real-time
-THẬT** từ **Wikimedia EventStreams** để hiện phim đang thịnh hành, và làm giàu giao diện bằng
-**poster phim thật** từ TMDB. Toàn bộ đóng gói bằng **Docker Compose (13 container)**.
+Đây là hệ thống **gợi ý phim** được xây dựng trên nền tảng **Big Data** theo mô hình **Lambda Architecture**, kết hợp giữa **Batch Layer**, **Speed Layer** và **Serving Layer**. Mô hình học máy trung tâm là **ALS (Alternating Least Squares)** của **Spark MLlib**, được huấn luyện trên bộ dữ liệu **MovieLens 25M** với hơn **25 triệu lượt đánh giá phim**.
 
-> Môn: *Kỹ thuật và Công nghệ Dữ liệu lớn* — ĐH Công nghệ, Viện Trí tuệ Nhân tạo.
+Điểm nổi bật của dự án là không chỉ tạo gợi ý từ dữ liệu lịch sử mà còn tích hợp **nguồn dữ liệu thời gian thực từ Wikimedia EventStreams** để hiển thị các phim đang được quan tâm trên Wikipedia. Giao diện cũng được làm giàu bằng **poster phim thật từ TMDB**, đồng thời toàn bộ hệ thống được triển khai bằng **Docker Compose với 13 container**.
+
+> **Môn học:** Kỹ thuật và Công nghệ Dữ liệu lớn – Đại học Công nghệ, Viện Trí tuệ Nhân tạo.
 
 ---
 
-## ✨ Điểm nổi bật
+# ✨ Điểm nổi bật
 
-- **ALS phân tán** huấn luyện trên toàn bộ 25M ratings → **RMSE 0.7965 · MAE 0.6187**.
-- **Lambda Architecture** đầy đủ: Batch (chính xác) + Speed (tươi mới) + Serving.
-- **Real-time THẬT** từ Wikimedia (không phải mô phỏng) → mục "⚡ Thịnh hành real-time".
-- **Poster phim thật** (TMDB, 11.866 ảnh) + tìm phim + REST API.
-- **13 container** chạy thật, verify end-to-end; chạy lại local bằng **1 lệnh**.
+* Huấn luyện mô hình **ALS phân tán** trên toàn bộ **25 triệu ratings** của MovieLens.
+* Đạt kết quả đánh giá:
+
+  * **RMSE:** `0.7965`
+  * **MAE:** `0.6187`
+* Triển khai đầy đủ kiến trúc **Lambda Architecture** gồm Batch Layer, Speed Layer và Serving Layer.
+* Sử dụng **dữ liệu thời gian thực thật** từ **Wikimedia EventStreams** thay vì mô phỏng.
+* Tích hợp **poster phim thật** từ **TMDB** cùng chức năng tìm kiếm và REST API.
+* Toàn bộ hệ thống được đóng gói bằng **Docker Compose với 13 container**, có thể chạy lại hoàn chỉnh trên máy cục bộ chỉ với một lệnh.
 
 ---
 
-## 🏗️ Kiến trúc (Lambda Architecture)
+# 🏗️ Kiến trúc hệ thống
 
 ```
 NGUỒN DỮ LIỆU              INGESTION        XỬ LÝ                       SERVING
@@ -35,197 +38,302 @@ Wikimedia (real-time THẬT) ─► Kafka ─► Consumer ─► HBase (Speed Vi
 TMDB ─► MySQL.poster_url            Airflow lập lịch train lại
 ```
 
-- **Batch Layer:** MovieLens 25M trên HDFS → Spark train ALS → MySQL. Airflow lập lịch retrain.
-- **Speed Layer:** Wikimedia (phim đang được sửa trên Wikipedia) + replay rating → Kafka →
-  consumer → HBase (danh sách thịnh hành `__TRENDING__` + gợi ý thể loại theo user).
-- **Serving Layer:** Flask hợp nhất gợi ý batch (MySQL) + real-time (HBase) + poster (TMDB).
+## Batch Layer
 
-| Layer | Công nghệ | Vai trò |
-|-------|-----------|---------|
-| Ingestion | **Kafka** + Zookeeper | Topic `ratings-stream`: rating replay + sự kiện phim Wikipedia live |
-| Data Lake | **HDFS** | Lưu MovieLens 25M thô (`ratings.csv` ~647MB) |
-| Batch | **Spark (PySpark) + MLlib (ALS)** | Train mô hình, sinh Top-N gợi ý |
-| Speed View | **HBase** | Gợi ý real-time theo user + danh sách thịnh hành |
-| Batch View | **MySQL** | Metadata phim (+poster) + gợi ý + thống kê |
-| Orchestration | **Airflow** | Lập lịch ETL & retrain |
-| Serving | **Flask** | Web demo + REST API |
-| Nguồn real-time | **Wikimedia EventStreams** | Luồng SSE công khai, không key |
-| Làm giàu | **TMDB API** | Poster phim thật |
-| Deploy | **Docker Compose** | Đóng gói 13 container |
+* Dữ liệu **MovieLens 25M** được lưu trên **HDFS**.
+* **Spark MLlib** huấn luyện mô hình ALS và sinh danh sách gợi ý Top-N.
+* Kết quả được lưu vào **MySQL**.
+* **Airflow** chịu trách nhiệm lập lịch ETL và retrain định kỳ.
+
+## Speed Layer
+
+* Nhận luồng sự kiện thời gian thực từ **Wikimedia EventStreams**.
+* Kafka tiếp nhận dữ liệu, Consumer xử lý và cập nhật vào **HBase**.
+* HBase lưu:
+
+  * Danh sách phim đang thịnh hành (`__TRENDING__`).
+  * Gợi ý theo thể loại cho từng người dùng.
+
+## Serving Layer
+
+* **Flask** kết hợp dữ liệu từ:
+
+  * Batch View trong MySQL.
+  * Speed View trong HBase.
+  * Poster phim từ TMDB.
+* Cung cấp giao diện web và REST API cho người dùng.
+
+| Layer            | Công nghệ                         | Vai trò                                                                   |
+| ---------------- | --------------------------------- | ------------------------------------------------------------------------- |
+| Ingestion        | **Kafka + Zookeeper**             | Topic `ratings-stream`: replay rating và sự kiện Wikipedia thời gian thực |
+| Data Lake        | **HDFS**                          | Lưu dữ liệu MovieLens 25M (`ratings.csv` ~647MB)                          |
+| Batch            | **Spark (PySpark) + MLlib (ALS)** | Huấn luyện mô hình và sinh Top-N recommendation                           |
+| Speed View       | **HBase**                         | Lưu gợi ý real-time và danh sách phim thịnh hành                          |
+| Batch View       | **MySQL**                         | Metadata phim, poster, recommendation và thống kê                         |
+| Orchestration    | **Airflow**                       | Điều phối ETL và retrain                                                  |
+| Serving          | **Flask**                         | Web demo và REST API                                                      |
+| Nguồn real-time  | **Wikimedia EventStreams**        | Luồng SSE công khai, không cần API key                                    |
+| Làm giàu dữ liệu | **TMDB API**                      | Lấy poster phim thật                                                      |
+| Deploy           | **Docker Compose**                | Triển khai toàn bộ hệ thống                                               |
 
 ---
 
-## 📊 Kết quả (chạy thật 25M)
+# 📊 Kết quả thực nghiệm
 
-| Chỉ số | Giá trị |
-|--------|---------|
-| Tổng ratings | **25.000.095** (~162.541 user, 62.423 phim) |
-| **RMSE / MAE** (test 20%) | **0.7965 / 0.6187** |
-| Gợi ý sinh ra | 400.000 dòng (20.000 user × Top-20) |
-| Poster TMDB | 11.866 ảnh |
+| Chỉ số                 | Giá trị                                 |
+| ---------------------- | --------------------------------------- |
+| Tổng số ratings        | **25.000.095**                          |
+| Số người dùng          | **~162.541**                            |
+| Số phim                | **62.423**                              |
+| RMSE (test 20%)        | **0.7965**                              |
+| MAE (test 20%)         | **0.6187**                              |
+| Recommendation sinh ra | **400.000 dòng (20.000 user × Top-20)** |
+| Poster TMDB            | **11.866 ảnh**                          |
 
 ---
 
-## 📂 Cấu trúc thư mục
+# 📂 Cấu trúc thư mục
 
-```
+```text
 BIG DATA/
-├── docker-compose.yml           # 13 service (Lambda stack đầy đủ)
-├── .env.example                 # mẫu biến môi trường (copy thành .env)
-├── README.md · CLAUDE.md        # hướng dẫn / tổng quan
-├── CLAUDE_báo_cáo.md · web.md   # kho nội dung báo cáo / hướng dẫn deploy GCP
-├── data/ml-25m/                 # MovieLens 25M (KHÔNG commit — tự tải)
+├── docker-compose.yml
+├── .env.example
+├── README.md
+├── CLAUDE.md
+├── CLAUDE_báo_cáo.md
+├── web.md
+├── data/ml-25m/
 ├── ingestion/
-│   ├── download_data.py         # tải MovieLens 25M
-│   ├── stream_producer.py       # replay rating → Kafka (mô phỏng)
-│   └── wiki_stream_producer.py  # Wikimedia EventStreams → Kafka (REAL-TIME THẬT)
-├── batch/train_als.py           # PySpark ALS: train, RMSE/MAE, Top-N, phim phổ biến
-├── stream/consumer.py           # Kafka → HBase: trending (Wikimedia) + gợi ý thể loại
+│   ├── download_data.py
+│   ├── stream_producer.py
+│   └── wiki_stream_producer.py
+├── batch/
+│   └── train_als.py
+├── stream/
+│   └── consumer.py
 ├── serving/
-│   ├── app.py                   # Flask: recommend/search/trending + REST API
-│   ├── templates/ · static/     # giao diện web (có poster)
+│   ├── app.py
+│   ├── templates/
+│   └── static/
 ├── scripts/
-│   ├── load_to_hdfs.sh · mysql_init.sql · build_demo_db.py
-│   ├── fetch_posters.py         # lấy poster TMDB → MySQL
-│   ├── make_charts.py · run_local.ps1
-├── airflow/dags/recsys_pipeline.py
+│   ├── load_to_hdfs.sh
+│   ├── mysql_init.sql
+│   ├── build_demo_db.py
+│   ├── fetch_posters.py
+│   ├── make_charts.py
+│   └── run_local.ps1
+├── airflow/
+│   └── dags/
+│       └── recsys_pipeline.py
 └── docs/
-    ├── REPORT.tex · REPORT.md   # báo cáo (LaTeX)
-    └── images/                  # biểu đồ
+    ├── REPORT.tex
+    ├── REPORT.md
+    └── images/
 ```
 
 ---
 
-## 🚀 Cách chạy (chi tiết)
+# 🚀 Hướng dẫn chạy dự án
 
-### Yêu cầu chung
-- **Python 3.10–3.12** và **JDK 8/11/17** (cho Spark). Với Windows cần `python.exe` thật (không
-  dùng bản Microsoft Store stub).
-- **Docker Desktop** (cho cách chạy đầy đủ) — cấp tối thiểu ~8GB RAM cho VM Linux.
-- Lấy **TMDB API key** (miễn phí) tại themoviedb.org nếu muốn poster.
+## Yêu cầu
 
-Trước hết sao chép file môi trường:
+* Python **3.10 – 3.12**
+* JDK **8 / 11 / 17**
+* Docker Desktop (khuyến nghị cấp tối thiểu 8GB RAM)
+* TMDB API Key (nếu muốn hiển thị poster)
+
+Trước tiên, tạo file cấu hình môi trường:
+
 ```bash
-cp .env.example .env      # rồi mở .env, đổi mật khẩu MySQL và điền TMDB_API_KEY (nếu có)
+cp .env.example .env
 ```
+
+Sau đó chỉnh sửa `.env`, thay đổi mật khẩu MySQL và thêm `TMDB_API_KEY` nếu có.
 
 ---
 
-### ⚡ Cách 1 — Demo nhanh trên LOCAL (khuyên dùng để chấm)
+# ⚡ Cách 1 – Chạy nhanh trên LOCAL (khuyến nghị để demo)
 
-Chạy được ngay sản phẩm gợi ý mà **không cần Docker** (ghi thẳng SQLite). Nhanh nhất là dùng
-script 1-lệnh đã xử lý sẵn mọi cấu hình Windows (JAVA_HOME, PYSPARK_PYTHON, setuptools<81…):
+Script PowerShell sẽ tự động:
+
+* Tải dữ liệu nếu chưa có.
+* Huấn luyện ALS.
+* Tạo SQLite (`serving/recsys.db`).
+* Khởi động Flask Web.
 
 ```powershell
-# Windows PowerShell — chạy từ thư mục dự án
-.\scripts\run_local.ps1            # chạy đầy đủ trên 25M
-.\scripts\run_local.ps1 -Sample    # chạy nhanh trên mẫu nhỏ (vài phút)
+.\scripts\run_local.ps1
 ```
-Script sẽ: tải dữ liệu (nếu thiếu) → train ALS → nạp SQLite (`serving/recsys.db`) → bật web.
-Mở **http://localhost:5000**.
 
-> Repo đã kèm sẵn `serving/recsys.db` (17MB), nên có thể **chạy web ngay** mà chưa cần train:
-> ```bash
-> cd serving && python app.py     # mở http://localhost:5000
-> ```
+Hoặc chạy bản mẫu nhỏ:
 
-**Chạy thủ công từng bước (nếu không dùng script):**
+```powershell
+.\scripts\run_local.ps1 -Sample
+```
+
+Sau khi hoàn thành, truy cập:
+
+```
+http://localhost:5000
+```
+
+Repository cũng đã kèm sẵn:
+
+```
+serving/recsys.db
+```
+
+nên có thể mở web ngay mà chưa cần train:
+
+```bash
+cd serving
+python app.py
+```
+
+### Chạy thủ công từng bước
+
 ```bash
 pip install pyspark==3.5.1 "setuptools<81" pandas pyarrow flask sqlalchemy
-python ingestion/download_data.py          # tải MovieLens 25M về data/ml-25m/
-python batch/train_als.py                  # train ALS → batch/output (hoặc SQLite)
-python scripts/build_demo_db.py            # nạp kết quả vào serving/recsys.db
-cd serving && python app.py                # web demo: http://localhost:5000
+
+python ingestion/download_data.py
+python batch/train_als.py
+python scripts/build_demo_db.py
+
+cd serving
+python app.py
 ```
 
 ---
 
-### 🐳 Cách 2 — Lambda đầy đủ bằng DOCKER (13 container)
+# 🐳 Cách 2 – Chạy đầy đủ bằng Docker (13 container)
 
-Dựng toàn bộ hệ sinh thái Big Data thật.
+## Bước 1: Khởi động hệ thống
 
-**Bước 1 — Khởi động cụm:**
 ```bash
 docker compose up -d --build
-docker compose ps                  # kiểm tra 13 container Up/healthy
+docker compose ps
 ```
 
-**Bước 2 — Nạp dữ liệu MovieLens lên HDFS:**
+## Bước 2: Đưa dữ liệu lên HDFS
+
 ```bash
-# Git Bash:
 MSYS_NO_PATHCONV=1 bash scripts/load_to_hdfs.sh
-# (hoặc nạp bằng lệnh hdfs dfs -put trong PowerShell nếu MSYS đổi path)
 ```
-MySQL tự khởi tạo schema từ `scripts/mysql_init.sql` khi container `mysql` lần đầu chạy.
 
-**Bước 3 — Huấn luyện ALS trên Spark (ghi Batch View vào MySQL):**
+MySQL sẽ tự tạo schema từ:
+
+```
+scripts/mysql_init.sql
+```
+
+khi khởi động lần đầu.
+
+## Bước 3: Huấn luyện ALS
+
 ```bash
 docker exec spark-master spark-submit \
   --master spark://spark-master:7077 \
   --packages com.mysql:mysql-connector-j:8.3.0 \
   /app/batch/train_als.py
-# (hoặc kích hoạt DAG `movielens_recsys_batch` trên Airflow UI :8088)
 ```
 
-**Bước 4 — Real-time tự chạy:** service `wiki` đẩy sự kiện phim live từ Wikimedia vào Kafka,
-service `stream` (consumer) tổng hợp vào HBase. Producer replay (`ingestion`) cũng tự chạy.
+Hoặc kích hoạt DAG:
 
-**Bước 5 — Lấy poster TMDB (tùy chọn):**
+```
+movielens_recsys_batch
+```
+
+trên Airflow.
+
+## Bước 4: Chạy luồng thời gian thực
+
+* `wiki` lấy dữ liệu trực tiếp từ Wikimedia.
+* `stream` đọc Kafka và cập nhật HBase.
+* `ingestion` replay dữ liệu ratings.
+
+## Bước 5: Lấy poster từ TMDB (tùy chọn)
+
 ```bash
 pip install pymysql sqlalchemy
-export TMDB_API_KEY=...            # key v3 của bạn
-python scripts/fetch_posters.py --links data/ml-25m/links.csv --limit 5000
-# ảnh đọc từ DB lúc request → chỉ cần refresh web, không build lại
+
+export TMDB_API_KEY=...
+
+python scripts/fetch_posters.py \
+  --links data/ml-25m/links.csv \
+  --limit 5000
 ```
 
-**Bước 6 — Mở web demo:** http://localhost:5000
+## Bước 6: Mở web demo
 
-| Dịch vụ | URL |
-|---------|-----|
-| **Web demo (Flask)** | http://localhost:5000 |
-| Spark Master UI | http://localhost:8080 |
-| HDFS NameNode UI | http://localhost:9870 |
-| HBase UI | http://localhost:16010 |
-| Airflow UI | http://localhost:8088 (admin/admin) |
+```
+http://localhost:5000
+```
 
-> Muốn xem mục **"⚡ Thịnh hành real-time"** đầy lên: để service `wiki` chạy vài phút (luồng
-> Wikimedia khớp ~2 phim/phút), rồi F5 trang chủ.
+| Dịch vụ         | Địa chỉ                               |
+| --------------- | ------------------------------------- |
+| Flask Web       | http://localhost:5000                 |
+| Spark Master UI | http://localhost:8080                 |
+| HDFS NameNode   | http://localhost:9870                 |
+| HBase UI        | http://localhost:16010                |
+| Airflow UI      | http://localhost:8088 (`admin/admin`) |
+
+Để mục **⚡ Thịnh hành real-time** hiển thị dữ liệu, chỉ cần để service `wiki` chạy vài phút rồi tải lại trang.
 
 ---
 
-### 🛠️ Xử lý sự cố thường gặp
+# 🛠️ Xử lý sự cố thường gặp
 
-| Triệu chứng | Cách xử lý |
-|-------------|------------|
-| **HBase :16010 trống, consumer đứng** | `docker compose up -d --force-recreate hbase` rồi `docker compose restart stream` |
-| Spark worker thiếu numpy (ảnh bde2020) | `docker exec spark-master apk add py3-numpy` (và spark-worker) |
-| Cổng 5000 bận | Dừng Flask local trước khi `docker compose up` |
-| Container chết bất thường | Thiếu RAM — `docker stats`, tăng RAM cho Docker Desktop |
-| (Local) Spark worker crash trên Windows | Đặt `PYSPARK_PYTHON` trỏ python.exe thật; cần `setuptools<81` |
-| Container `wiki` không có log | Đặt `PYTHONUNBUFFERED=1` (đã set trong compose) |
+| Vấn đề                 | Cách khắc phục                                                                    |
+| ---------------------- | --------------------------------------------------------------------------------- |
+| HBase không hoạt động  | `docker compose up -d --force-recreate hbase` rồi `docker compose restart stream` |
+| Spark thiếu numpy      | `docker exec spark-master apk add py3-numpy` (thực hiện tương tự với worker)      |
+| Cổng 5000 bị chiếm     | Tắt Flask local trước khi chạy Docker                                             |
+| Container tự dừng      | Kiểm tra RAM và tăng bộ nhớ cho Docker Desktop                                    |
+| Spark lỗi trên Windows | Thiết lập `PYSPARK_PYTHON` trỏ tới `python.exe` thật và dùng `setuptools<81`      |
+| `wiki` không ghi log   | Đảm bảo `PYTHONUNBUFFERED=1` đã được thiết lập                                    |
 
 ---
 
-## 🧮 Thuật toán ALS
+# 🧮 Thuật toán ALS
 
-ALS phân rã ma trận đánh giá `R (users × movies)` thành hai ma trận ẩn `U (users × k)` và
-`V (movies × k)`, tối thiểu hóa:
+ALS phân rã ma trận đánh giá `R (users × movies)` thành hai ma trận ẩn:
 
-```
+* `U (users × k)`
+* `V (movies × k)`
+
+với mục tiêu tối ưu:
+
+```text
 min Σ_(u,i) (r_ui − uᵤᵀ·vᵢ)² + λ(Σ‖uᵤ‖² + Σ‖vᵢ‖²)
 ```
 
-giải **luân phiên** (cố định `V` giải `U`, rồi ngược lại) — song song hóa tốt trên Spark, phù
-hợp dữ liệu lớn. Siêu tham số: `rank=64, maxIter=10, regParam=0.08, coldStartStrategy=drop`,
-Top-N=20, lọc phim ≥1000 lượt. Đánh giá bằng **RMSE / MAE** trên tập test 20%.
+Thuật toán giải theo cách **luân phiên**, tức là:
+
+1. Giữ cố định `V` để tính `U`.
+2. Giữ cố định `U` để tính `V`.
+
+Cách tiếp cận này rất phù hợp với xử lý song song trên Spark và dữ liệu quy mô lớn.
+
+Các siêu tham số sử dụng:
+
+* `rank = 64`
+* `maxIter = 10`
+* `regParam = 0.08`
+* `coldStartStrategy = drop`
+* `Top-N = 20`
+* Chỉ giữ các phim có ít nhất **1000 lượt đánh giá**
+
+Mô hình được đánh giá bằng **RMSE** và **MAE** trên tập kiểm thử chiếm **20% dữ liệu**.
 
 ---
 
-## 📑 Tài liệu
+# 📑 Tài liệu
 
-- Báo cáo LaTeX: [docs/REPORT.tex](docs/REPORT.tex) · bản markdown: [docs/REPORT.md](docs/REPORT.md)
-- Tổng quan & ghi chú kỹ thuật: [CLAUDE.md](CLAUDE.md)
-- Hướng dẫn deploy lên Google Cloud: [web.md](web.md)
+* `docs/REPORT.tex` – Báo cáo LaTeX.
+* `docs/REPORT.md` – Báo cáo định dạng Markdown.
+* `CLAUDE.md` – Tổng quan và ghi chú kỹ thuật.
+* `web.md` – Hướng dẫn triển khai trên Google Cloud.
 
-> **Dataset:** MovieLens 25M (~647MB) không kèm trong repo. Tải bằng `ingestion/download_data.py`
-> hoặc tại [grouplens.org/datasets/movielens/25m](https://grouplens.org/datasets/movielens/25m/).
+---
+
+> **Lưu ý:** Bộ dữ liệu **MovieLens 25M** (~647MB) không được đưa vào repository do kích thước lớn. Bạn có thể tải bằng `ingestion/download_data.py` hoặc trực tiếp từ trang chính thức của GroupLens trước khi chạy huấn luyện mô hình.
