@@ -39,7 +39,8 @@ $env:DATA_DIR="./data"; python ingestion/download_data.py
 
  Git Bash / Linux / macOS
 DATA_DIR=./data python ingestion/download_data.py
-Cách 3 — Tải thủ công
+
+## Cách 3 — Tải thủ công
 Vào: https://grouplens.org/datasets/movielens/25m/
 Tải file ml-25m.zip.
 Giải nén sao cho được thư mục data/ml-25m/ chứa các file .csv như trên.
