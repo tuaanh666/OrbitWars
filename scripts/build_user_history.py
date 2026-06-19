@@ -1,17 +1,3 @@
-"""
-build_user_history.py
-======================
-Dựng bảng `user_history` (vài phim mỗi user từng đánh giá cao) để demo hiển thị
-"phim user từng thích". Chỉ dùng pandas (không cần Spark) nên chạy ổn định.
-
-Đọc danh sách user từ bảng user_recommendations trong DB, rồi quét ratings.csv
-theo chunk để lấy top phim điểm cao của các user đó.
-
-Env:
-  DB_URL        (default sqlite:///serving/recsys_full.db)
-  RATINGS_PATH  (default ./data/ml-25m/ratings.csv)
-  TOP_PER_USER  (default 10)
-"""
 import os
 import pandas as pd
 from sqlalchemy import create_engine, text
