@@ -17,7 +17,6 @@
 * Triển khai đầy đủ kiến trúc **Lambda Architecture** gồm Batch Layer, Speed Layer và Serving Layer.
 * Sử dụng dữ liệu thời gian thực thật từ **Wikimedia EventStreams** thay vì mô phỏng.
 * Toàn bộ hệ thống được đóng gói bằng **Docker Compose với 13 container**, có thể chạy lại hoàn chỉnh trên máy cục bộ chỉ với một lệnh.
-
 > Bộ dữ liệu **MovieLens 25M** (~647MB) không được đưa vào repository do kích thước lớn. Tải bằng `ingestion/download_data.py` hoặc trực tiếp từ trang chính thức của GroupLens trước khi chạy huấn luyện mô hình.
 
 
