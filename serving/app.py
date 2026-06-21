@@ -194,6 +194,18 @@ def index():
     return render_template("index.html", stats=stats, popular=popular, trending=trending)
 
 
+@app.route("/api/trending_debug")
+def api_trending_debug():
+    """Chẩn đoán luồng trending live: số sự kiện đã quét, số phim khớp..."""
+    if not LIVE_TRENDING:
+        return jsonify({"live_trending": False, "note": "ENABLE_LIVE_TRENDING chưa bật"})
+    try:
+        import trending_live
+        return jsonify({"live_trending": True, **trending_live.info()})
+    except Exception as e:
+        return jsonify({"live_trending": True, "error": str(e)})
+
+
 @app.route("/api/trending")
 def api_trending():
     return jsonify({"trending": get_trending(40)})
