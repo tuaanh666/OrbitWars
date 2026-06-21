@@ -288,6 +288,8 @@ Các siêu tham số sử dụng:
 * `Top-N = 20`
 * Chỉ giữ các phim có ít nhất **1000 lượt đánh giá**
 
+* web demo: https://movierec-demo-yy7l.onrender.com/
+
 Mô hình được đánh giá bằng **RMSE** và **MAE** trên tập kiểm thử chiếm **20% dữ liệu**.
 
 
