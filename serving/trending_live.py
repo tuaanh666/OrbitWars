@@ -75,9 +75,18 @@ def _build_index(db_url):
 
 
 # --------------------------- Đọc luồng SSE ---------------------------------- #
+_USER_AGENT = ("MovieRec/1.0 (https://github.com/tuaanh666/BIGDATA; "
+               "movie-recsys demo) Python-urllib")
+
+
 def _iter_stream(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "movielens-recsys/1.0"})
-    resp = urllib.request.urlopen(req, timeout=30)
+    # User-Agent mô tả rõ + Accept SSE: Wikimedia yêu cầu UA đúng chuẩn, nếu không
+    # (đặc biệt từ IP trung tâm dữ liệu như Render) có thể bị chặn/treo kết nối.
+    req = urllib.request.Request(url, headers={
+        "User-Agent": _USER_AGENT,
+        "Accept": "text/event-stream",
+    })
+    resp = urllib.request.urlopen(req, timeout=20)
     for raw in resp:
         line = raw.decode("utf-8", "ignore").strip()
         if line.startswith("data:"):
